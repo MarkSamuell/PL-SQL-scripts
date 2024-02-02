@@ -29,4 +29,6 @@ The script uses `DBMS_OUTPUT.PUT_LINE` statements to provide informative message
 ## Error Handling
 The script includes basic error handling to handle exceptions during dynamic SQL execution. Error messages are output to the server log.
 
+## Requirements
+- Oracle Database environment with appropriate privileges.
 
