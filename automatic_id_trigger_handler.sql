@@ -5,7 +5,7 @@ dynamic sql : write ddl statements inside plsql code
 __________
 create seq, trg pairs on all tables in the schema
     - using loop
-    - drop all sequences first in the loop => done
+    - drop all sequences first in the loop 
     - replace any triggers if found =>
     - set sequences to start with max id + 1
         for each table
@@ -49,8 +49,7 @@ BEGIN
         seq_name := tab_record.TABLE_NAME || '_SEQ';
         trg_name := tab_record.TABLE_NAME || '_TRG';
 
-        -- Rest of the code remains unchanged
-      -- Selecting the primary key columns and their data types for a composite primary key
+      -- Selecting the primary key columns and their data types 
             SELECT COLUMN_NAME, DATA_TYPE
             INTO pk_name, pk_data_type
             FROM (
