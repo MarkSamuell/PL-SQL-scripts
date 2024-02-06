@@ -50,6 +50,8 @@ BEGIN
         trg_name := tab_record.TABLE_NAME || '_TRG';
 
       -- Selecting the primary key columns and their data types 
+-- Selecting the primary key columns and their data types 
+        BEGIN
             SELECT COLUMN_NAME, DATA_TYPE
             INTO pk_name, pk_data_type
             FROM (
@@ -66,8 +68,12 @@ BEGIN
                     )
                 ORDER BY ACCC.POSITION -- Order by position to maintain the order of columns in the primary key
             ) WHERE ROWNUM = 1; -- Select only the first row, assuming it's a single table with a composite primary key
+        EXCEPTION -- Catch no_data_found exception if no primary key in table
+                WHEN NO_DATA_FOUND THEN
+                    CONTINUE; -- Skip to the next iteration of the loop if no primary key is found
+            END;
+        
 
-                    
             -- Check if the data type of the primary key is numeric
             IF pk_data_type = 'NUMBER' THEN
                 -- Finding the maximum value of the primary key
@@ -113,6 +119,14 @@ BEGIN
                 ' END;';
     END LOOP;
 END;
+
+
+
+
+
+
+
+
 
 
 
