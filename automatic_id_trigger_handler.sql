@@ -22,14 +22,12 @@ DECLARE
     CURSOR SEQ_CURSOR IS
         SELECT sequence_name FROM USER_SEQUENCES;
 
-    -- Tables cursor
+
     CURSOR TAB_CURSOR IS
-        SELECT TABLE_NAME,
-               LISTAGG(column_name, ',') WITHIN GROUP (ORDER BY column_id) AS concatenated_columns
+        SELECT distinct TABLE_NAME 
         FROM USER_TAB_COLUMNS, USER_OBJECTS
         WHERE USER_TAB_COLUMNS.TABLE_NAME = USER_OBJECTS.OBJECT_NAME
-        AND OBJECT_TYPE = 'TABLE'
-        GROUP BY TABLE_NAME;
+        AND OBJECT_TYPE = 'TABLE';
 
     seq_name VARCHAR2(30); 
     trg_name VARCHAR2(30);
@@ -49,41 +47,40 @@ BEGIN
         seq_name := tab_record.TABLE_NAME || '_SEQ';
         trg_name := tab_record.TABLE_NAME || '_TRG';
 
-      -- Selecting the primary key columns and their data types 
+ 
 -- Selecting the primary key columns and their data types 
         BEGIN
             SELECT COLUMN_NAME, DATA_TYPE
             INTO pk_name, pk_data_type
             FROM (
+            
                 SELECT ACC.COLUMN_NAME, ACC.DATA_TYPE, ACCC.CONSTRAINT_NAME
                 FROM USER_TAB_COLUMNS ACC
                 JOIN USER_CONS_COLUMNS ACCC ON ACCC.TABLE_NAME = ACC.TABLE_NAME
                     AND ACCC.COLUMN_NAME = ACC.COLUMN_NAME
                 WHERE ACC.TABLE_NAME = TAB_RECORD.TABLE_NAME
-                    AND ACCC.CONSTRAINT_NAME IN (
-                        SELECT CONSTRAINT_NAME
-                        FROM USER_CONSTRAINTS
-                        WHERE TABLE_NAME = TAB_RECORD.TABLE_NAME
-                        AND CONSTRAINT_TYPE = 'P'
+                        AND ACCC.CONSTRAINT_NAME IN (
+                        
+                                SELECT CONSTRAINT_NAME
+                                FROM USER_CONSTRAINTS
+                                WHERE TABLE_NAME = TAB_RECORD.TABLE_NAME
+                                AND CONSTRAINT_TYPE = 'P'  
                     )
                 ORDER BY ACCC.POSITION -- Order by position to maintain the order of columns in the primary key
             ) WHERE ROWNUM = 1; -- Select only the first row, assuming it's a single table with a composite primary key
-        EXCEPTION -- Catch no_data_found exception if no primary key in table
+            EXCEPTION -- Catch no_data_found exception if no primary key in table
                 WHEN NO_DATA_FOUND THEN
-                    CONTINUE; -- Skip to the next iteration of the loop if no primary key is found
+                   pk_name := NULL;
+                    pk_data_type := NULL;-- Skip to the next iteration of the loop if no primary key is found
             END;
         
 
             -- Check if the data type of the primary key is numeric
             IF pk_data_type = 'NUMBER' THEN
-                -- Finding the maximum value of the primary key
+                -- making the maximum value of the primary key sequence
                 BEGIN
                     DBMS_OUTPUT.PUT_LINE('Dynamic SQL: SELECT TO_NUMBER(MAX(' || pk_name || ')+1) FROM ' || tab_record.TABLE_NAME);
                     EXECUTE IMMEDIATE 'SELECT TO_NUMBER(MAX(' || pk_name || ')+1) FROM ' || tab_record.TABLE_NAME INTO pk_max_value;
-                EXCEPTION
-                    WHEN OTHERS THEN
-                        DBMS_OUTPUT.PUT_LINE('Error executing dynamic SQL: ' || SQLERRM);
-                        pk_max_value := 0; -- Set a default value or handle the error accordingly
                 END;
             ELSE
                 -- Handle the case where the primary key is not numeric
